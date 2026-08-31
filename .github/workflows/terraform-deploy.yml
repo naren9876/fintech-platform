@@ -1,0 +1,60 @@
+name: Terraform CI/CD
+
+on:
+  push:
+    branches: [main]
+    paths: [terraform/**]
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: hashicorp/setup-terraform@v2
+      - run: cd terraform && terraform fmt -check -recursive
+      - run: cd terraform && terraform init -backend=false && terraform validate
+
+  deploy-dev:
+    needs: quality
+    runs-on: ubuntu-latest
+    environment: development
+    steps:
+      - uses: actions/checkout@v3
+      - uses: hashicorp/setup-terraform@v2
+      - uses: google-github-actions/auth@v1
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY_DEV }}
+      - run: |
+          cd terraform
+          terraform init -backend-config="bucket=fintech-terraform-state-dev"
+          terraform plan -var-file=environments/dev.tfvars
+
+  deploy-staging:
+    needs: deploy-dev
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - uses: actions/checkout@v3
+      - uses: hashicorp/setup-terraform@v2
+      - uses: google-github-actions/auth@v1
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY_STAGING }}
+      - run: |
+          cd terraform
+          terraform init -backend-config="bucket=fintech-terraform-state-staging"
+          terraform plan -var-file=environments/staging.tfvars
+
+  deploy-prod:
+    needs: deploy-staging
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v3
+      - uses: hashicorp/setup-terraform@v2
+      - uses: google-github-actions/auth@v1
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY_PROD }}
+      - run: |
+          cd terraform
+          terraform init -backend-config="bucket=fintech-terraform-state-prod"
+          terraform plan -var-file=environments/prod.tfvars
