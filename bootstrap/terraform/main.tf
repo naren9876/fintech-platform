@@ -1,18 +1,3 @@
-terraform {
-  required_version = ">= 1.5.0"
-  required_providers {
-    google = {
-      source  = "hashicorp/google"
-      version = "~> 5.0"
-    }
-  }
-}
-
-provider "google" {
-  project = var.gcp_project_id
-  region  = var.gcp_region
-}
-
 locals {
   environments = {
     dev = {
@@ -25,24 +10,22 @@ locals {
       name = "prod"
     }
   }
+
+  repo_name = split("/", var.github_repository)[1]
 }
 
 resource "google_storage_bucket" "terraform_state" {
   for_each = local.environments
-  
+
   name          = "fintech-terraform-state-${each.key}"
   location      = var.gcp_region
   project       = var.gcp_project_id
   force_destroy = false
-  
+
   versioning {
     enabled = true
   }
-  
-  uniform_bucket_level_access {
-    enabled = true
-  }
-  
+
   labels = {
     environment = each.key
     managed_by  = "terraform"
@@ -66,21 +49,44 @@ resource "google_service_account_key" "github_actions" {
   public_key_type    = "TYPE_X509_PEM_FILE"
 }
 
+resource "github_actions_secret" "gcp_key_dev" {
+  repository      = local.repo_name
+  secret_name     = "GCP_SA_KEY_DEV"
+  plaintext_value = google_service_account_key.github_actions.private_key
+}
+
+resource "github_actions_secret" "gcp_key_staging" {
+  repository      = local.repo_name
+  secret_name     = "GCP_SA_KEY_STAGING"
+  plaintext_value = google_service_account_key.github_actions.private_key
+}
+
+resource "github_actions_secret" "gcp_key_prod" {
+  repository      = local.repo_name
+  secret_name     = "GCP_SA_KEY_PROD"
+  plaintext_value = google_service_account_key.github_actions.private_key
+}
+
 output "state_buckets" {
   value = {
     for env, bucket in google_storage_bucket.terraform_state :
     env => bucket.name
   }
-  description = "Terraform state buckets"
 }
 
 output "service_account_email" {
-  value       = google_service_account.github_actions.email
-  description = "GitHub Actions service account email"
+  value = google_service_account.github_actions.email
 }
 
 output "service_account_key" {
-  value       = google_service_account_key.github_actions.private_key
-  sensitive   = true
-  description = "GitHub Actions service account private key"
+  value     = google_service_account_key.github_actions.private_key
+  sensitive = true
+}
+
+output "github_secrets_created" {
+  value = [
+    github_actions_secret.gcp_key_dev.secret_name,
+    github_actions_secret.gcp_key_staging.secret_name,
+    github_actions_secret.gcp_key_prod.secret_name
+  ]
 }

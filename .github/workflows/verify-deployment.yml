@@ -1,0 +1,58 @@
+name: Verify Deployment
+
+on:
+  workflow_run:
+    workflows: ["Terraform CI/CD"]
+    types: [completed]
+    branches: [main]
+
+env:
+  GCP_REGION: us-central1
+
+jobs:
+  verify-dev:
+    name: Verify DEV
+    if: github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: google-github-actions/auth@v1
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY_DEV }}
+      - uses: google-github-actions/setup-gcloud@v1
+      - uses: azure/setup-kubectl@v3
+      - run: gcloud config set project fintech-dev-001
+      - run: gcloud container clusters get-credentials fintech-dev --region us-central1 --project fintech-dev-001
+      - run: echo "=== DEV Cluster ===" >> $GITHUB_STEP_SUMMARY && gcloud container clusters describe fintech-dev --region us-central1 --project fintech-dev-001 --format="value(status)" >> $GITHUB_STEP_SUMMARY
+      - run: echo "=== DEV Nodes ===" >> $GITHUB_STEP_SUMMARY && kubectl get nodes -o wide >> $GITHUB_STEP_SUMMARY
+      - run: kubectl cluster-info >> $GITHUB_STEP_SUMMARY
+
+  verify-staging:
+    name: Verify STAGING
+    if: github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: google-github-actions/auth@v1
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY_STAGING }}
+      - uses: google-github-actions/setup-gcloud@v1
+      - uses: azure/setup-kubectl@v3
+      - run: gcloud config set project fintech-staging-001
+      - run: gcloud container clusters get-credentials fintech-staging --region us-central1 --project fintech-staging-001
+      - run: echo "=== STAGING Cluster ===" >> $GITHUB_STEP_SUMMARY && gcloud container clusters describe fintech-staging --region us-central1 --project fintech-staging-001 --format="value(status)" >> $GITHUB_STEP_SUMMARY
+      - run: echo "=== STAGING Nodes ===" >> $GITHUB_STEP_SUMMARY && kubectl get nodes -o wide >> $GITHUB_STEP_SUMMARY
+
+  verify-prod:
+    name: Verify PROD
+    if: github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: google-github-actions/auth@v1
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY_PROD }}
+      - uses: google-github-actions/setup-gcloud@v1
+      - uses: azure/setup-kubectl@v3
+      - run: gcloud config set project fintech-prod-001
+      - run: gcloud container clusters get-credentials fintech-prod --region us-central1 --project fintech-prod-001
+      - run: echo "=== PROD Cluster ===" >> $GITHUB_STEP_SUMMARY && gcloud container clusters describe fintech-prod --region us-central1 --project fintech-prod-001 --format="value(status)" >> $GITHUB_STEP_SUMMARY
+      - run: echo "=== PROD Nodes ===" >> $GITHUB_STEP_SUMMARY && kubectl get nodes -o wide >> $GITHUB_STEP_SUMMARY
+      - run: echo "=== PROD HA ===" >> $GITHUB_STEP_SUMMARY && kubectl get nodes -o json | jq '.items | length' >> $GITHUB_STEP_SUMMARY

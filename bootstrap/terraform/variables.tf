@@ -9,3 +9,14 @@ variable "gcp_region" {
   description = "GCP Region"
   default     = "us-central1"
 }
+
+variable "github_token" {
+  type        = string
+  sensitive   = true
+  description = "GitHub Personal Access Token"
+}
+
+variable "github_repository" {
+  type        = string
+  description = "GitHub repository (owner/repo)"
+}
