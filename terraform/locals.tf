@@ -4,9 +4,9 @@ locals {
     Environment = var.environment
     ManagedBy   = "Terraform"
   }
-  
+
   is_prod = var.environment == "prod"
-  
+
   resource_config = {
     dev = {
       machine_type = "e2-medium"
@@ -27,6 +27,6 @@ locals {
       redis_size   = 10
     }
   }
-  
+
   current = local.resource_config[var.environment]
 }

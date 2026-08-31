@@ -12,7 +12,7 @@ variable "gcp_region" {
 variable "environment" {
   type        = string
   description = "Environment (dev, staging, prod)"
-  
+
   validation {
     condition     = contains(["dev", "staging", "prod"], var.environment)
     error_message = "Environment must be dev, staging, or prod"
