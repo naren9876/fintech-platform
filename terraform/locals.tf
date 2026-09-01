@@ -58,19 +58,19 @@ locals {
 
   redis_config = {
     dev = {
-      tier     = "BASIC"
-      size_gb  = 1
-      ha       = false
+      tier    = "BASIC"
+      size_gb = 1
+      ha      = false
     }
     staging = {
-      tier     = "STANDARD"
-      size_gb  = 5
-      ha       = true
+      tier    = "STANDARD"
+      size_gb = 5
+      ha      = true
     }
     prod = {
-      tier     = "STANDARD"
-      size_gb  = 10
-      ha       = true
+      tier    = "STANDARD"
+      size_gb = 10
+      ha      = true
     }
   }
 }

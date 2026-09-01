@@ -91,18 +91,18 @@ module "gke" {
 module "cloudsql" {
   source = "./modules/cloudsql"
 
-  project_id       = var.gcp_project_id
-  region           = var.gcp_region
-  environment      = var.environment
-  instance_name    = "fintech-${var.environment}-db"
-  database_version = "POSTGRES_15"
-  tier             = local.database_config[var.environment].tier
+  project_id        = var.gcp_project_id
+  region            = var.gcp_region
+  environment       = var.environment
+  instance_name     = "fintech-${var.environment}-db"
+  database_version  = "POSTGRES_15"
+  tier              = local.database_config[var.environment].tier
   availability_type = local.database_config[var.environment].availability_type
-  enable_backup    = local.database_config[var.environment].backup_enabled
+  enable_backup     = local.database_config[var.environment].backup_enabled
 
-  network_id   = module.gke.network_name
+  network_id    = module.gke.network_name
   database_name = "fintech_db"
-  username     = "fintech_user"
+  username      = "fintech_user"
 
   labels = local.common_labels
 
