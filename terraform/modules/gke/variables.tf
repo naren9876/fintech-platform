@@ -89,3 +89,11 @@ variable "labels" {
   description = "Labels to apply"
   default     = {}
 }
+
+variable "api_services" {
+  type = list(object({
+    service = string
+  }))
+  description = "GCP API services to depend on"
+  default     = []
+}
