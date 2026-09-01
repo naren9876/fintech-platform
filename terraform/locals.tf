@@ -1,32 +1,40 @@
 locals {
   common_labels = {
-    Project     = "fintech"
-    Environment = var.environment
-    ManagedBy   = "Terraform"
+    project     = "fintech-platform"
+    environment = var.environment
+    managed_by  = "terraform"
   }
-
-  is_prod = var.environment == "prod"
 
   resource_config = {
     dev = {
-      machine_type = "e2-medium"
-      node_count   = 2
-      db_tier      = "db-f1-micro"
-      redis_size   = 1
+      gke_machine_type = "e2-medium"
+      gke_node_count   = 1
+      gke_max_nodes    = 2
     }
     staging = {
-      machine_type = "e2-standard-4"
-      node_count   = 3
-      db_tier      = "db-custom-2-8192"
-      redis_size   = 2
+      gke_machine_type = "e2-standard-4"
+      gke_node_count   = 3
+      gke_max_nodes    = 5
     }
     prod = {
-      machine_type = "n2-standard-8"
-      node_count   = 5
-      db_tier      = "db-custom-4-16384"
-      redis_size   = 10
+      gke_machine_type = "n2-standard-8"
+      gke_node_count   = 5
+      gke_max_nodes    = 10
     }
   }
 
-  current = local.resource_config[var.environment]
+  secondary_ip_ranges = {
+    dev = {
+      pods     = "10.4.0.0/14"
+      services = "10.0.0.0/20"
+    }
+    staging = {
+      pods     = "10.8.0.0/14"
+      services = "10.16.0.0/20"
+    }
+    prod = {
+      pods     = "10.12.0.0/14"
+      services = "10.32.0.0/20"
+    }
+  }
 }
