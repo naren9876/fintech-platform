@@ -1,28 +1,25 @@
 output "cluster_name" {
-  value = google_container_cluster.primary.name
+  value       = google_container_cluster.primary.name
+  description = "GKE cluster name"
 }
 
-output "kubernetes_cluster_host" {
-  value     = "https://${google_container_cluster.primary.endpoint}"
-  sensitive = true
+output "cluster_endpoint" {
+  value       = google_container_cluster.primary.endpoint
+  description = "GKE cluster endpoint"
+  sensitive   = true
 }
 
-output "kubernetes_cluster_name" {
-  value = google_container_cluster.primary.name
+output "region" {
+  value       = google_container_cluster.primary.location
+  description = "GKE cluster region"
 }
 
 output "network_name" {
-  value = google_compute_network.private_network.name
+  value       = google_compute_network.vpc.name
+  description = "VPC network name"
 }
 
 output "subnet_name" {
-  value = google_compute_subnetwork.private_subnet.name
-}
-
-output "service_account_email" {
-  value = google_service_account.kubernetes_nodes.email
-}
-
-output "get_cluster_credentials_command" {
-  value = "gcloud container clusters get-credentials ${google_container_cluster.primary.name} --region ${var.region} --project ${var.project_id}"
+  value       = google_compute_subnetwork.subnet.name
+  description = "Subnet name"
 }
