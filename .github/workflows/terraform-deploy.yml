@@ -10,72 +10,45 @@ env:
 
 jobs:
   quality:
-    name: Quality Checks
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: hashicorp/setup-terraform@v2
+      - uses: actions/checkout@v4
+      
+      - uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: 1.9.0
+          terraform_version: ${{ env.TF_VERSION }}
+      
       - run: cd terraform && terraform fmt -check -recursive
-      - run: cd terraform && terraform init -backend=false && terraform validate
+      - run: cd terraform && terraform validate
 
   deploy-dev:
-    name: Deploy to DEV
-    needs: quality
     runs-on: ubuntu-latest
-    environment: development
+    needs: quality
+    if: github.ref == 'refs/heads/main'
+    
     steps:
-      - uses: actions/checkout@v3
-      - uses: hashicorp/setup-terraform@v2
-        with:
-          terraform_version: 1.9.0
+      - uses: actions/checkout@v4
+      
       - uses: google-github-actions/auth@v1
         with:
           credentials_json: ${{ secrets.GCP_SA_KEY_DEV }}
+      
       - uses: google-github-actions/setup-gcloud@v1
+      
       - run: gcloud config set project fintech-dev-001
-      - run: cd terraform && terraform init -backend-config="bucket=fintech-terraform-state-dev"
-      - run: cd terraform && terraform plan -var-file=environments/dev.tfvars -out=tfplan-dev
-      - run: cd terraform && terraform apply -auto-approve tfplan-dev
-      - run: cd terraform && echo "=== DEV Outputs ===" >> $GITHUB_STEP_SUMMARY && terraform output >> $GITHUB_STEP_SUMMARY
-
-  deploy-staging:
-    name: Deploy to STAGING
-    needs: deploy-dev
-    runs-on: ubuntu-latest
-    environment: staging
-    steps:
-      - uses: actions/checkout@v3
-      - uses: hashicorp/setup-terraform@v2
+      
+      - uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: 1.9.0
-      - uses: google-github-actions/auth@v1
-        with:
-          credentials_json: ${{ secrets.GCP_SA_KEY_STAGING }}
-      - uses: google-github-actions/setup-gcloud@v1
-      - run: gcloud config set project fintech-staging-001
-      - run: cd terraform && terraform init -backend-config="bucket=fintech-terraform-state-staging" -reconfigure
-      - run: cd terraform && terraform plan -var-file=environments/staging.tfvars -out=tfplan-staging
-      - run: cd terraform && terraform apply -auto-approve tfplan-staging
-      - run: cd terraform && echo "=== STAGING Outputs ===" >> $GITHUB_STEP_SUMMARY && terraform output >> $GITHUB_STEP_SUMMARY
-
-  deploy-prod:
-    name: Deploy to PROD
-    needs: deploy-staging
-    runs-on: ubuntu-latest
-    environment: production
-    steps:
-      - uses: actions/checkout@v3
-      - uses: hashicorp/setup-terraform@v2
-        with:
-          terraform_version: 1.9.0
-      - uses: google-github-actions/auth@v1
-        with:
-          credentials_json: ${{ secrets.GCP_SA_KEY_PROD }}
-      - uses: google-github-actions/setup-gcloud@v1
-      - run: gcloud config set project fintech-prod-001
-      - run: cd terraform && terraform init -backend-config="bucket=fintech-terraform-state-prod" -reconfigure
-      - run: cd terraform && terraform plan -var-file=environments/prod.tfvars -out=tfplan-prod
-      - run: cd terraform && terraform apply -auto-approve tfplan-prod
-      - run: cd terraform && echo "=== PROD Outputs ===" >> $GITHUB_STEP_SUMMARY && terraform output >> $GITHUB_STEP_SUMMARY
+          terraform_version: ${{ env.TF_VERSION }}
+      
+      - run: |
+          cd terraform
+          terraform init -backend-config="bucket=fintech-terraform-state-dev"
+          terraform plan -var-file=environments/dev.tfvars -out=tfplan-dev
+          terraform apply tfplan-dev
+      
+      - run: |
+          cd terraform
+          terraform output -raw environment >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          terraform output -raw project_id >> $GITHUB_STEP_SUMMARY
