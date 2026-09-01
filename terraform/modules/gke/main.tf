@@ -13,13 +13,13 @@ resource "google_container_cluster" "primary" {
     enabled = true
     resource_limits {
       resource_type = "cpu"
-      minimum        = 1
-      maximum        = 64
+      minimum       = 1
+      maximum       = 64
     }
     resource_limits {
       resource_type = "memory"
-      minimum        = 1
-      maximum        = 256
+      minimum       = 1
+      maximum       = 256
     }
   }
 
