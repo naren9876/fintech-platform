@@ -103,8 +103,6 @@ resource "google_container_cluster" "primary" {
     environment = var.environment
     managed_by  = "terraform"
   })
-
-  depends_on = [google_compute_subnetwork.private_subnet]
 }
 
 resource "google_service_account" "kubernetes_nodes" {

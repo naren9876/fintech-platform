@@ -34,3 +34,34 @@ module "gke" {
   # Labels
   labels = local.common_labels
 }
+
+# Enable required APIs
+resource "google_project_service" "cloudresourcemanager" {
+  service            = "cloudresourcemanager.googleapis.com"
+  project            = var.gcp_project_id
+  disable_on_destroy = false
+}
+
+resource "google_project_service" "container" {
+  service            = "container.googleapis.com"
+  project            = var.gcp_project_id
+  disable_on_destroy = false
+}
+
+resource "google_project_service" "compute" {
+  service            = "compute.googleapis.com"
+  project            = var.gcp_project_id
+  disable_on_destroy = false
+}
+
+resource "google_project_service" "logging" {
+  service            = "logging.googleapis.com"
+  project            = var.gcp_project_id
+  disable_on_destroy = false
+}
+
+resource "google_project_service" "monitoring" {
+  service            = "monitoring.googleapis.com"
+  project            = var.gcp_project_id
+  disable_on_destroy = false
+}
