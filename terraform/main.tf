@@ -29,6 +29,25 @@ resource "google_project_service" "monitoring" {
   disable_on_destroy = false
 }
 
+# Shared VPC Peering for Private Connectivity
+resource "google_compute_global_address" "private_ip_address" {
+  name          = "private-ip-address-${var.environment}"
+  purpose       = "VPC_PEERING"
+  address_type  = "INTERNAL"
+  prefix_length = 16
+  network       = "projects/${var.gcp_project_id}/global/networks/fintech-${var.environment}-vpc"
+
+  depends_on = [google_project_service.compute]
+}
+
+resource "google_service_networking_connection" "private_vpc_connection" {
+  network                 = "projects/${var.gcp_project_id}/global/networks/fintech-${var.environment}-vpc"
+  service                 = "servicenetworking.googleapis.com"
+  reserved_peering_ranges = [google_compute_global_address.private_ip_address.name]
+
+  depends_on = [google_project_service.compute]
+}
+
 # GKE Cluster Module
 module "gke" {
   source = "./modules/gke"
@@ -72,20 +91,44 @@ module "gke" {
 module "cloudsql" {
   source = "./modules/cloudsql"
 
-  project_id        = var.gcp_project_id
-  region            = var.gcp_region
-  environment       = var.environment
-  instance_name     = "fintech-${var.environment}-db"
-  database_version  = "POSTGRES_15"
-  tier              = local.database_config[var.environment].tier
+  project_id       = var.gcp_project_id
+  region           = var.gcp_region
+  environment      = var.environment
+  instance_name    = "fintech-${var.environment}-db"
+  database_version = "POSTGRES_15"
+  tier             = local.database_config[var.environment].tier
   availability_type = local.database_config[var.environment].availability_type
-  enable_backup     = local.database_config[var.environment].backup_enabled
+  enable_backup    = local.database_config[var.environment].backup_enabled
 
-  network_id    = module.gke.network_name
+  network_id   = module.gke.network_name
   database_name = "fintech_db"
-  username      = "fintech_user"
+  username     = "fintech_user"
 
   labels = local.common_labels
 
-  depends_on = [module.gke]
+  depends_on = [
+    module.gke,
+    google_service_networking_connection.private_vpc_connection
+  ]
+}
+
+# Memorystore Redis Module
+module "redis" {
+  source = "./modules/redis"
+
+  project_id    = var.gcp_project_id
+  region        = var.gcp_region
+  environment   = var.environment
+  instance_name = "fintech-${var.environment}-redis"
+  tier          = local.redis_config[var.environment].tier
+  size_gb       = local.redis_config[var.environment].size_gb
+  redis_version = "REDIS_7_0"
+  network_id    = module.gke.network_name
+
+  labels = local.common_labels
+
+  depends_on = [
+    module.gke,
+    google_service_networking_connection.private_vpc_connection
+  ]
 }

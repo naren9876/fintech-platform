@@ -42,3 +42,26 @@ output "connection_string" {
   sensitive   = true
   description = "Full connection string"
 }
+
+# Redis Outputs
+output "redis_host" {
+  value       = module.redis.host
+  description = "Redis host IP"
+}
+
+output "redis_port" {
+  value       = module.redis.port
+  description = "Redis port"
+}
+
+output "redis_auth_token" {
+  value       = module.redis.auth_token
+  sensitive   = true
+  description = "Redis AUTH token"
+}
+
+output "redis_connection_string" {
+  value       = module.redis.connection_string
+  sensitive   = true
+  description = "Redis connection string"
+}

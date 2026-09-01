@@ -34,8 +34,6 @@ resource "google_sql_database_instance" "primary" {
       record_application_tags = false
     }
   }
-
-  depends_on = [google_service_networking_connection.private_vpc_connection]
 }
 
 # Database
@@ -54,19 +52,4 @@ resource "google_sql_user" "database_user" {
   name     = var.username
   instance = google_sql_database_instance.primary.name
   password = random_password.db_password.result
-}
-
-# Private IP Connection
-resource "google_compute_global_address" "private_ip_address" {
-  name          = "private-ip-address-${var.environment}"
-  purpose       = "VPC_PEERING"
-  address_type  = "INTERNAL"
-  prefix_length = 16
-  network       = "projects/${var.project_id}/global/networks/${var.network_id}"
-}
-
-resource "google_service_networking_connection" "private_vpc_connection" {
-  network                 = "projects/${var.project_id}/global/networks/${var.network_id}"
-  service                 = "servicenetworking.googleapis.com"
-  reserved_peering_ranges = [google_compute_global_address.private_ip_address.name]
 }
