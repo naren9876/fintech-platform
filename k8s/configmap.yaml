@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fintech-api-config
+  namespace: default
+data:
+  PORT: "8080"
+  DB_PORT: "5432"
+  DB_NAME: "fintech_db"
+  DB_USER: "fintech_user"
+  REDIS_PORT: "6378"
+  DB_HOST: "10.113.0.5"
+  REDIS_HOST: "10.113.87.99"
