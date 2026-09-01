@@ -37,4 +37,22 @@ locals {
       services = "10.32.0.0/20"
     }
   }
+
+  database_config = {
+    dev = {
+      tier              = "db-f1-micro"
+      availability_type = "ZONAL"
+      backup_enabled    = true
+    }
+    staging = {
+      tier              = "db-custom-2-8192"
+      availability_type = "REGIONAL"
+      backup_enabled    = true
+    }
+    prod = {
+      tier              = "db-custom-4-16384"
+      availability_type = "REGIONAL"
+      backup_enabled    = true
+    }
+  }
 }
