@@ -29,7 +29,7 @@ jobs:
       - name: Build & test
         working-directory: app
         run: |
-          go build -v ./...
+          go build -o /tmp/fintech-api ./src
           go vet ./...
 
       - name: Auth to GCP
