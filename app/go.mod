@@ -1,6 +1,6 @@
 module github.com/naren9876/fintech-platform
 
-go 1.23
+go 1.26
 
 require (
 	github.com/go-redis/redis/v8 v8.11.5
