@@ -12,56 +12,63 @@ output "region" {
 
 # Cloud SQL Outputs
 output "cloudsql_instance_name" {
-  value       = module.cloudsql.instance_name
-  description = "Cloud SQL instance name"
+  value = module.cloudsql.instance_name
 }
 
 output "cloudsql_private_ip" {
-  value       = module.cloudsql.private_ip_address
-  description = "Cloud SQL private IP"
+  value = module.cloudsql.private_ip_address
 }
 
 output "database_name" {
-  value       = module.cloudsql.database_name
-  description = "Database name"
+  value = module.cloudsql.database_name
 }
 
 output "database_user" {
-  value       = module.cloudsql.database_user
-  description = "Database username"
+  value = module.cloudsql.database_user
 }
 
 output "database_password" {
   value       = module.cloudsql.database_password
   sensitive   = true
-  description = "Database password"
 }
 
 output "connection_string" {
   value       = module.cloudsql.connection_string
   sensitive   = true
-  description = "Full connection string"
 }
 
 # Redis Outputs
 output "redis_host" {
-  value       = module.redis.host
-  description = "Redis host IP"
+  value = module.redis.host
 }
 
 output "redis_port" {
-  value       = module.redis.port
-  description = "Redis port"
+  value = module.redis.port
 }
 
 output "redis_auth_token" {
   value       = module.redis.auth_token
   sensitive   = true
-  description = "Redis AUTH token"
 }
 
 output "redis_connection_string" {
   value       = module.redis.connection_string
   sensitive   = true
-  description = "Redis connection string"
+}
+
+# Phase 4 Outputs
+output "monitoring_dashboard" {
+  value       = module.monitoring.dashboard_url
+  description = "Cloud Monitoring dashboards"
+}
+
+output "logging_console" {
+  value       = module.logging.logs_url
+  description = "Cloud Logging console"
+}
+
+output "api_key" {
+  value       = random_password.api_key.result
+  sensitive   = true
+  description = "Generated API key"
 }

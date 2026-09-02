@@ -1,0 +1,122 @@
+name: Build, Scan & Canary Deploy
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'app/**'
+      - '.github/workflows/app-build-deploy.yml'
+
+env:
+  PROJECT_ID: fintech-dev-001
+  SERVICE: fintech-api
+  REGION: us-central1
+  IMAGE: gcr.io/fintech-dev-001/fintech-api
+
+jobs:
+  build-scan-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      # ---------- CI ----------
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+
+      - name: Build & test
+        working-directory: app
+        run: |
+          go build -v ./...
+          go vet ./...
+
+      - name: Auth to GCP
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up gcloud
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker for GCR
+        run: gcloud auth configure-docker gcr.io --quiet
+
+      - name: Build Docker image
+        working-directory: app
+        run: |
+          docker build -t $IMAGE:${{ github.sha }} -t $IMAGE:latest .
+
+      # ---------- SECURITY GATE ----------
+      - name: Trivy vulnerability scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.IMAGE }}:${{ github.sha }}
+          format: table
+          severity: CRITICAL,HIGH
+          exit-code: '1'          # CRITICAL/HIGH found -> pipeline FAILS here
+          ignore-unfixed: true    # only flag vulns that have a fix available
+
+      # ---------- PUSH (only runs if scan passed) ----------
+      - name: Push image to GCR
+        run: |
+          docker push $IMAGE:${{ github.sha }}
+          docker push $IMAGE:latest
+
+      # ---------- CANARY DEPLOY ----------
+      - name: Deploy new revision with ZERO traffic
+        run: |
+          gcloud run deploy $SERVICE \
+            --image $IMAGE:${{ github.sha }} \
+            --region $REGION \
+            --no-traffic \
+            --tag canary \
+            --quiet
+
+      - name: Shift 5% traffic to canary
+        run: |
+          gcloud run services update-traffic $SERVICE \
+            --region $REGION \
+            --to-tags canary=5 \
+            --quiet
+
+      - name: Canary health check (30s soak)
+        id: canary
+        run: |
+          CANARY_URL=$(gcloud run services describe $SERVICE --region $REGION \
+            --format="value(status.traffic.url)" | grep canary)
+          echo "Canary URL: $CANARY_URL"
+          sleep 5
+          FAILS=0
+          for i in $(seq 1 6); do
+            CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 5 $CANARY_URL/health || echo "000")
+            echo "Check $i: HTTP $CODE"
+            if [ "$CODE" != "200" ]; then FAILS=$((FAILS+1)); fi
+            sleep 5
+          done
+          echo "fails=$FAILS" >> $GITHUB_OUTPUT
+          if [ "$FAILS" -gt 1 ]; then
+            echo "Canary UNHEALTHY ($FAILS/6 checks failed)"
+            exit 1
+          fi
+          echo "Canary healthy ($((6-FAILS))/6 checks passed)"
+
+      - name: Promote canary to 100%
+        if: success()
+        run: |
+          gcloud run services update-traffic $SERVICE \
+            --region $REGION \
+            --to-latest \
+            --quiet
+          echo "Promoted to 100% traffic"
+
+      # ---------- AUTO-ROLLBACK ----------
+      - name: Rollback on canary failure
+        if: failure() && steps.canary.outcome == 'failure'
+        run: |
+          gcloud run services update-traffic $SERVICE \
+            --region $REGION \
+            --to-tags canary=0 \
+            --quiet
+          echo "ROLLED BACK: canary at 0%, stable revision serving 100%"

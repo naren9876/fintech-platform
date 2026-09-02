@@ -132,3 +132,34 @@ module "redis" {
     google_service_networking_connection.private_vpc_connection
   ]
 }
+
+# Load Balancer Module
+
+# Phase 4: Monitoring, Security, Logging
+module "monitoring" {
+  source = "./modules/monitoring"
+
+  project_id  = var.gcp_project_id
+  alert_email = "nari.nanda@gmail.com"
+}
+
+module "security" {
+  source = "./modules/security"
+
+  project_id  = var.gcp_project_id
+  db_password = module.cloudsql.database_password
+  redis_token = module.redis.auth_token
+  api_key     = random_password.api_key.result
+}
+
+module "logging" {
+  source = "./modules/logging"
+
+  project_id = var.gcp_project_id
+}
+
+# Generate API Key
+resource "random_password" "api_key" {
+  length  = 32
+  special = true
+}
