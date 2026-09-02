@@ -8,7 +8,7 @@ resource "google_project_service" "logging" {
 # Log Sink for Cloud Run
 resource "google_logging_project_sink" "fintech_api_logs" {
   name        = "fintech-api-logs"
-  destination = "logging.googleapis.com/projects/${var.project_id}/logs/fintech-api"
+  destination = "logging.googleapis.com/projects/${var.project_id}/locations/global/buckets/_Default"
   filter      = "resource.type=\"cloud_run_revision\" resource.labels.service_name=\"fintech-api\""
   project     = var.project_id
 
@@ -18,7 +18,7 @@ resource "google_logging_project_sink" "fintech_api_logs" {
 # Log Sink for Audit Logs
 resource "google_logging_project_sink" "audit_logs" {
   name        = "fintech-audit-logs"
-  destination = "logging.googleapis.com/projects/${var.project_id}/logs/audit"
+  destination = "logging.googleapis.com/projects/${var.project_id}/locations/global/buckets/_Default"
   filter      = "protoPayload.methodName=~\"storage\\.\" OR protoPayload.methodName=~\"cloudsql\\.\""
   project     = var.project_id
 
@@ -30,6 +30,10 @@ resource "google_logging_metric" "api_errors" {
   name    = "fintech_api_errors"
   filter  = "resource.type=\"cloud_run_revision\" resource.labels.service_name=\"fintech-api\" httpRequest.status>=400"
   project = var.project_id
+
+  label_extractors = {
+    "status_code" = "EXTRACT(httpRequest.status)"
+  }
 
   metric_descriptor {
     metric_kind = "DELTA"
@@ -49,6 +53,7 @@ resource "google_logging_metric" "database_queries" {
   name    = "fintech_database_queries"
   filter  = "protoPayload.serviceName=\"cloudsql.googleapis.com\" protoPayload.methodName=\"cloudsql.instances.query\""
   project = var.project_id
+
 
   metric_descriptor {
     metric_kind = "DELTA"

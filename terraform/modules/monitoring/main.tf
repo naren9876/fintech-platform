@@ -74,7 +74,7 @@ resource "google_monitoring_dashboard" "fintech_dashboard" {
                 {
                   timeSeriesQuery = {
                     timeSeriesFilter = {
-                      filter = "metric.type=\"run.googleapis.com/request_count\" resource.type=\"cloud_run_revision\" resource.label.service_name=\"fintech-api\" metric.response_code_class=\"5xx\""
+                      filter = "metric.type=\"run.googleapis.com/request_count\" resource.type=\"cloud_run_revision\" resource.label.service_name=\"fintech-api\" metric.labels.response_code_class=\"5xx\""
                     }
                   }
                 }
@@ -120,7 +120,7 @@ resource "google_monitoring_alert_policy" "high_error_rate" {
   conditions {
     display_name = "Error rate > 5%"
     condition_threshold {
-      filter          = "metric.type=\"run.googleapis.com/request_count\" resource.type=\"cloud_run_revision\" metric.response_code_class=\"5xx\""
+      filter          = "metric.type=\"run.googleapis.com/request_count\" resource.type=\"cloud_run_revision\" metric.labels.response_code_class=\"5xx\""
       duration        = "300s"
       comparison      = "COMPARISON_GT"
       threshold_value = 50
