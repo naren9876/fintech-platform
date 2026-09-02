@@ -72,3 +72,11 @@ output "api_key" {
   sensitive   = true
   description = "Generated API key"
 }
+
+output "workload_identity_provider" {
+  value = module.ci_identity.workload_identity_provider
+}
+
+output "ci_service_account_email" {
+  value = module.ci_identity.ci_service_account_email
+}

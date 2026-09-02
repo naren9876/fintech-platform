@@ -16,6 +16,9 @@ env:
 jobs:
   build-scan-deploy:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
     steps:
       # ---------- CI ----------
       - name: Checkout
@@ -35,7 +38,8 @@ jobs:
       - name: Auth to GCP
         uses: google-github-actions/auth@v2
         with:
-          credentials_json: ${{ secrets.GCP_SA_KEY }}
+          workload_identity_provider: projects/832393411011/locations/global/workloadIdentityPools/github-pool/providers/github-provider
+          service_account: github-actions@fintech-dev-001.iam.gserviceaccount.com
 
       - name: Set up gcloud
         uses: google-github-actions/setup-gcloud@v2
