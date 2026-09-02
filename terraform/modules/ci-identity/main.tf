@@ -14,6 +14,7 @@ resource "google_project_iam_member" "ci_roles" {
     "roles/storage.admin",
     "roles/editor",
     "roles/resourcemanager.projectIamAdmin",
+    "roles/secretmanager.secretAccessor",
     "roles/iam.serviceAccountUser",
   ])
   project = var.project_id
