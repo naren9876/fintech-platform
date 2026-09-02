@@ -28,13 +28,13 @@ output "database_user" {
 }
 
 output "database_password" {
-  value       = module.cloudsql.database_password
-  sensitive   = true
+  value     = module.cloudsql.database_password
+  sensitive = true
 }
 
 output "connection_string" {
-  value       = module.cloudsql.connection_string
-  sensitive   = true
+  value     = module.cloudsql.connection_string
+  sensitive = true
 }
 
 # Redis Outputs
@@ -47,13 +47,13 @@ output "redis_port" {
 }
 
 output "redis_auth_token" {
-  value       = module.redis.auth_token
-  sensitive   = true
+  value     = module.redis.auth_token
+  sensitive = true
 }
 
 output "redis_connection_string" {
-  value       = module.redis.connection_string
-  sensitive   = true
+  value     = module.redis.connection_string
+  sensitive = true
 }
 
 # Phase 4 Outputs
